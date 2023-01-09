@@ -55,6 +55,7 @@
     "@react-valence/numberfield": "^0.0.1",
     "@react-valence/overlays": "^0.0.1",
     "@react-valence/picker": "^0.0.1",
+    "@react-valence/plane": "^0.0.1",
     "@react-valence/progress": "^0.0.1",
     "@react-valence/provider": "^0.0.1",
     "@react-valence/radio": "^0.0.1",

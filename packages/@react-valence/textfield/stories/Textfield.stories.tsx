@@ -190,8 +190,15 @@ IconRobotQuietInvalid.storyName = "Icon: QuietInvalid";
 IconRobotQuietInvalid.args = {
   icon: <Robot />,
   isQuiet: true,
-  validationState: "invalid",
+  validationState: undefined
 };
+
+IconRobotQuietInvalid.argTypes = {
+  validationState: {
+    options: [undefined, 'valid', 'invalid'],
+    control: { type: "select" },
+  }
+}
 
 export const LabelAlignEnd = TextFieldRender.bind({});
 LabelAlignEnd.storyName = "Label: LabelAlign End";

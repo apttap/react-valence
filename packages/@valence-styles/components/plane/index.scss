@@ -1,0 +1,26 @@
+.Plane {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.PointerControls {
+  transition: opacity 350ms ease;
+}
+
+.PointerFlagCoords {
+  font-family: 'Roboto Mono';
+  fill: url(#gradientNormal);
+}
+
+.CurrentPositionText {
+  fill: white;
+}
+.CurrentPositionTextHeading {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.CurrentPositionTextCoordinates {
+  font-family: 'Roboto Mono';
+}
