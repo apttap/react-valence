@@ -1,11 +1,11 @@
 import { Story } from "@ladle/react";
 
-import { ValencePlaneProps } from "../../../@types-valence/plane/src";
+import { ValencePlaneProps } from "@types-valence/plane";
 import { Plane } from "../src";
 
 
 export default {
-  title: "Plane",
+  title: "STLViewer",
   component: Plane,
 };
 
