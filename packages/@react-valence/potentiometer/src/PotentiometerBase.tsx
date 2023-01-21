@@ -1,4 +1,10 @@
-import React, { CSSProperties, RefObject, useRef, useState } from "react";
+import React, {
+  CSSProperties,
+  RefObject,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 // @react-aria https://react-spectrum.adobe.com/react-aria/
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -24,7 +30,6 @@ import styles from "@valence-styles/components/potentiometer/vars.module.scss";
 
 // Motion
 import { motion } from "framer-motion";
-import { Value } from "@react-valence/color/stories/ColorField.stories";
 
 export interface SliderBaseChildArguments {
   inputRef: RefObject<HTMLInputElement>;
@@ -37,18 +42,22 @@ function PotentiometerBase(
   props: PotentiometerBaseProps,
   ref: FocusableRef<HTMLDivElement>
 ) {
-  const [maxValue, setMaxValue] = useState(350);
-  const [minValue, setMinValue] = useState(0);
-  const [size, setSize] = useState({ width: 35, height: 150 });
-  const [targetPosition, setTargetPosition] = useState({ x: 0, y: 100 });
-  const [targetValue, setTargetValue] = useState(0);
-  const [currentValue, setCurrentValue] = useState(0);
-  const [isPressed, setPressed] = useState(false);
-
   let limits = {
     minHeight: 15,
     maxHeight: 150,
   };
+
+  const [maxValue, setMaxValue] = useState(350);
+  const [minValue, setMinValue] = useState(0);
+  const [size, setSize] = useState({ width: 35, height: 150 });
+  const [targetPosition, setTargetPosition] = useState({
+    x: 0,
+    y: limits.maxHeight - limits.minHeight,
+  });
+  const [targetValue, setTargetValue] = useState("0");
+  const [currentValue, setCurrentValue] = useState("21");
+  const [currentPostion, setCurrentPosition] = useState(115)
+  const [isPressed, setPressed] = useState(false);
 
   // REFS
   const pointerSurface = useRef(null);
@@ -61,7 +70,11 @@ function PotentiometerBase(
     return value;
   };
 
-  let formatter = useNumberFormatter({ style: "unit", unitDisplay: "short", unit: "celsius" });
+  let formatter = useNumberFormatter({
+    style: "unit",
+    unitDisplay: "short",
+    unit: "celsius",
+  });
 
   function handlePointerMove(ev) {
     const maxMovement = limits.maxHeight - limits.minHeight;
@@ -70,15 +83,15 @@ function PotentiometerBase(
     if (isPressed) {
       const snappedY = snapValueToStep(pointerPosition.y, 0, maxMovement, step);
       setTargetPosition({ x: pointerPosition.x, y: snappedY });
-      let value = toFixedNumber(
-        calcValueFromPosition(targetPosition.y),
-        5,
-        10
-      );
+      let value = toFixedNumber(calcValueFromPosition(targetPosition.y), 5, 10);
 
       setTargetValue(formatter.format(value));
     }
   }
+
+  useEffect(() => {
+    setCurrentValue(formatter.format(19));
+  }, []);
 
   function handlePress(ev) {
     setPressed(true);
@@ -117,7 +130,7 @@ function PotentiometerBase(
           <g className={styles.potentiometer_text}>
             <rect
               x={0}
-              y={25}
+              y={currentPostion}
               height={size.height}
               width={size.width}
               fill={"#dfdfdf"}
@@ -126,10 +139,10 @@ function PotentiometerBase(
             <text
               fill={"url(#gradientNormal)"}
               x={4}
-              y={35}
+              y={currentPostion + 10}
               fontSize={"0.40rem"}
             >
-              250℃
+              {currentValue}
             </text>
           </g>
           <motion.g
@@ -154,6 +167,26 @@ function PotentiometerBase(
               {targetValue}
             </text>
           </motion.g>
+          {currentPostion > targetPosition.y && (
+            <g className={styles.potentiometer_text}>
+              <rect
+                x={0}
+                y={currentPostion}
+                height={size.height}
+                width={size.width}
+                fill={"#dfdfdf"}
+                rx={2}
+              />
+              <text
+                fill={"url(#gradientNormal)"}
+                x={4}
+                y={currentPostion + 10}
+                fontSize={"0.40rem"}
+              >
+                {currentValue}
+              </text>
+            </g>
+          )}
         </g>
       </svg>
     </div>
