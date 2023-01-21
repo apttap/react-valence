@@ -10,9 +10,11 @@ import { SliderState, useSliderState } from "@react-stately/slider";
 // @react-valence https://valence.austinpittman.net
 import {
   classNames,
+  svgPointerPosition,
   useFocusableRef,
   useStyleProps,
 } from "@react-valence/utils";
+import { SVGBackgroundGradientFrost, SVGBackgroundGradientNormal } from "@react-valence/instrument";
 import { useProviderProps } from "@react-valence/provider";
 
 // @types-valence
@@ -37,24 +39,15 @@ export interface SliderBaseProps<T = number[]> extends ValenceBarSliderBase<T> {
   style?: CSSProperties;
 }
 
-function SliderBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
+function PotentiometerBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
   const [targetPosition, setTargetPosition] = useState({ x: 0, y: 100 });
   const [isPressed, setPressed] = useState(false);
 
   // REFS
   const pointerSurface = useRef(null);
 
-  const calcRelativePosition = (ev) => {
-    var pt = pointerSurface.current.createSVGPoint();
-    pt.x = ev.pageX;
-    pt.y = ev.pageY;
-    pt = pt.matrixTransform(pointerSurface.current.getScreenCTM().inverse());
-
-    return { x: pt.x, y: pt.y };
-  };
-
   function handlePointerMove(ev) {
-    const pointerPosition = calcRelativePosition(ev);
+    const pointerPosition = svgPointerPosition(ev, pointerSurface);
     if (isPressed) {
       setTargetPosition(pointerPosition);
     }
@@ -89,23 +82,7 @@ function SliderBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
         <defs>
           <clipPath id="potentiometer_overflow">
             <rect x="0" rx="2" y="0" width={35} height={150} />
-            <linearGradient
-              id="gradientNormal"
-              x1="0"
-              y1="0"
-              x2="800"
-              y2="0"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0" stop-color="#ff5c85"></stop>
-              <stop offset="0.14285714285714285" stop-color="#ff5881"></stop>
-              <stop offset="0.2857142857142857" stop-color="#ff547d"></stop>
-              <stop offset="0.42857142857142855" stop-color="#ff4f79"></stop>
-              <stop offset="0.5714285714285714" stop-color="#ff4b74"></stop>
-              <stop offset="0.7142857142857142" stop-color="#ff4770"></stop>
-              <stop offset="0.8571428571428571" stop-color="#ff426b"></stop>
-              <stop offset="1" stop-color="#ff3d67"></stop>
-            </linearGradient>
+            <SVGBackgroundGradientNormal/>
           </clipPath>
         </defs>
         <g clipPath="url(#potentiometer_overflow)">
@@ -155,5 +132,5 @@ function SliderBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
   );
 }
 
-const _SliderBase = React.forwardRef(SliderBase);
-export { _SliderBase as SliderBase };
+const _PotentiometerBase = React.forwardRef(PotentiometerBase);
+export { _PotentiometerBase as PotentiometerBase };

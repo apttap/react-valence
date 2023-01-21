@@ -46,6 +46,7 @@
     "@react-valence/icon": "^0.0.1",
     "@react-valence/illustratedmessage": "^0.0.1",
     "@react-valence/image": "^0.0.1",
+    "@react-valence/instrument": "^0.0.1",
     "@react-valence/layout": "^0.0.1",
     "@react-valence/link": "^0.0.1",
     "@react-valence/list": "^0.0.1",

@@ -9,6 +9,12 @@ import React, {
 
 import { motion, useSpring } from "framer-motion";
 
+// @react-valence
+import {
+  SVGBackgroundGradientFrost,
+  SVGBackgroundGradientNormal,
+} from "@react-valence/instrument";
+
 // @types-valence
 import {
   DOMRef,
@@ -28,6 +34,7 @@ import toolstyles from "@valence-styles/components/tool/vars.module.scss";
 import styles from "@valence-styles/components/plane/vars.module.scss";
 import { HomeButton } from "./HomeButton";
 import ssrTeardown from "@react-valence/test-utils/src/ssrTeardown";
+import { svgPointerPosition } from "@react-valence/utils";
 
 function Plane<T extends object>(
   props: ValencePlaneProps,
@@ -81,15 +88,6 @@ function Plane<T extends object>(
   const [pointerFlagTextWidth, setPointerFlagTextWidth] = useState(0);
   const [selectedCoord, setSelectedCoord] = useState({ x: 0, y: 0 });
 
-  const calcRelativePosition = (e) => {
-    var pt = pointerSurface.current.createSVGPoint();
-    pt.x = e.pageX;
-    pt.y = e.pageY;
-    pt = pt.matrixTransform(pointerSurface.current.getScreenCTM().inverse());
-
-    return { x: pt.x, y: pt.y };
-  };
-
   const calcDimensionCoordsFromPixels = () => {
     let ratio = {
       x: planeDimensions.x / planer.width,
@@ -100,12 +98,16 @@ function Plane<T extends object>(
 
   useEffect(calcDimensionCoordsFromPixels, []);
 
-  const updatePointerPos = (e) => {
-    let coords = calcRelativePosition(e);
+  const updatePointerPos = (ev) => {
+    let coords = svgPointerPosition(ev, pointerSurface);
 
     if (props.snapToGrid) {
-      coords.x = Math.round(coords.x / (gridSize / planeVars.style.subDivision)) * (gridSize / planeVars.style.subDivision);
-      coords.y = Math.round(coords.y / (gridSize / planeVars.style.subDivision)) * (gridSize / planeVars.style.subDivision);
+      coords.x =
+        Math.round(coords.x / (gridSize / planeVars.style.subDivision)) *
+        (gridSize / planeVars.style.subDivision);
+      coords.y =
+        Math.round(coords.y / (gridSize / planeVars.style.subDivision)) *
+        (gridSize / planeVars.style.subDivision);
     }
 
     setPointerCoord(coords);
@@ -186,54 +188,8 @@ function Plane<T extends object>(
                 height={planer.height + 12}
               />
             </clipPath>
-            <linearGradient
-              id="gradientNormal"
-              x1="0"
-              y1="0"
-              x2="800"
-              y2="0"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0" stop-color="#ff5c85" />
-
-              <stop offset="0.14285714285714285" stop-color="#ff5881" />
-
-              <stop offset="0.2857142857142857" stop-color="#ff547d" />
-
-              <stop offset="0.42857142857142855" stop-color="#ff4f79" />
-
-              <stop offset="0.5714285714285714" stop-color="#ff4b74" />
-
-              <stop offset="0.7142857142857142" stop-color="#ff4770" />
-
-              <stop offset="0.8571428571428571" stop-color="#ff426b" />
-
-              <stop offset="1" stop-color="#ff3d67" />
-            </linearGradient>
-            <linearGradient
-              id="gradientFrost"
-              x1="0"
-              y1="0"
-              x2="800"
-              y2="0"
-              gradientUnits="userSpaceOnUse"
-            >
-              <stop offset="0" stop-color="#ff789a" />
-
-              <stop offset="0.14285714285714285" stop-color="#ff7495" />
-
-              <stop offset="0.2857142857142857" stop-color="#ff6f91" />
-
-              <stop offset="0.42857142857142855" stop-color="#ff6b8c" />
-
-              <stop offset="0.5714285714285714" stop-color="#ff6787" />
-
-              <stop offset="0.7142857142857142" stop-color="#ff6282" />
-
-              <stop offset="0.8571428571428571" stop-color="#ff5e7d" />
-
-              <stop offset="1" stop-color="#ff5978" />
-            </linearGradient>
+            <SVGBackgroundGradientNormal />
+            <SVGBackgroundGradientFrost />
           </defs>
           {/* <rect
             x={0}

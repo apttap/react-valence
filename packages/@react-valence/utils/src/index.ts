@@ -47,3 +47,7 @@ export { useResizeObserver } from "@react-aria/utils";
 //Spring WIP
 export { animated, useSpring, config as springConfig } from "react-spring";
 export { combineMotion } from './useSpring';
+
+
+// Instrumentation
+export { svgPointerPosition } from './instrumentation';
