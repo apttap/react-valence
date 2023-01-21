@@ -5,16 +5,17 @@ import { useNumberFormatter } from "@react-aria/i18n";
 import { useSlider } from "@react-aria/slider";
 
 // @react-stately https://react-spectrum.adobe.com/react-stately/
-import { SliderState, useSliderState } from "@react-stately/slider";
+import { clamp, snapValueToStep, toFixedNumber } from "@react-stately/utils";
 
 // @react-valence https://valence.austinpittman.net
 import {
   classNames,
   svgPointerPosition,
-  useFocusableRef,
-  useStyleProps,
 } from "@react-valence/utils";
-import { SVGBackgroundGradientFrost, SVGBackgroundGradientNormal } from "@react-valence/instrument";
+import {
+  SVGBackgroundGradientFrost,
+  SVGBackgroundGradientNormal,
+} from "@react-valence/instrument";
 import { useProviderProps } from "@react-valence/provider";
 
 // @types-valence
@@ -24,22 +25,21 @@ import { ValenceBarSliderBase } from "@types-valence/slider";
 // @valence-styles
 import styles from "@valence-styles/components/potentiometer/vars.module.scss";
 
-// motion stuff
-import { motion, useSpring } from "framer-motion";
+// Motion
+import { motion } from "framer-motion";
 
 export interface SliderBaseChildArguments {
   inputRef: RefObject<HTMLInputElement>;
-  trackRef: RefObject<HTMLElement>;
-  state: SliderState;
 }
 
 export interface SliderBaseProps<T = number[]> extends ValenceBarSliderBase<T> {
-  //children: (opts: SliderBaseChildArguments) => ReactNode;
-  classes?: string[] | Object;
-  style?: CSSProperties;
+
 }
 
-function PotentiometerBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
+function PotentiometerBase(
+  props: SliderBaseProps,
+  ref: FocusableRef<HTMLDivElement>
+) {
   const [targetPosition, setTargetPosition] = useState({ x: 0, y: 100 });
   const [isPressed, setPressed] = useState(false);
 
@@ -49,7 +49,9 @@ function PotentiometerBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElem
   function handlePointerMove(ev) {
     const pointerPosition = svgPointerPosition(ev, pointerSurface);
     if (isPressed) {
-      setTargetPosition(pointerPosition);
+      const snappedY = snapValueToStep(pointerPosition.y, 0, 135, 5);
+      console.log(snappedY, pointerPosition.y);
+      setTargetPosition({x: pointerPosition.x, y: snappedY});
     }
   }
 
@@ -82,7 +84,7 @@ function PotentiometerBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElem
         <defs>
           <clipPath id="potentiometer_overflow">
             <rect x="0" rx="2" y="0" width={35} height={150} />
-            <SVGBackgroundGradientNormal/>
+            <SVGBackgroundGradientNormal />
           </clipPath>
         </defs>
         <g clipPath="url(#potentiometer_overflow)">

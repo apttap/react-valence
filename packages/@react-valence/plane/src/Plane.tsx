@@ -35,6 +35,7 @@ import styles from "@valence-styles/components/plane/vars.module.scss";
 import { HomeButton } from "./HomeButton";
 import ssrTeardown from "@react-valence/test-utils/src/ssrTeardown";
 import { svgPointerPosition } from "@react-valence/utils";
+import { snapValueToStep } from "@react-aria/utils";
 
 function Plane<T extends object>(
   props: ValencePlaneProps,
@@ -102,12 +103,8 @@ function Plane<T extends object>(
     let coords = svgPointerPosition(ev, pointerSurface);
 
     if (props.snapToGrid) {
-      coords.x =
-        Math.round(coords.x / (gridSize / planeVars.style.subDivision)) *
-        (gridSize / planeVars.style.subDivision);
-      coords.y =
-        Math.round(coords.y / (gridSize / planeVars.style.subDivision)) *
-        (gridSize / planeVars.style.subDivision);
+      coords.x = snapValueToStep(coords.x, 0, planer.width, 8);
+      coords.y = snapValueToStep(coords.y, 0, planer.width, 8);
     }
 
     setPointerCoord(coords);
