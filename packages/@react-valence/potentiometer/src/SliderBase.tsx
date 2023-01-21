@@ -1,4 +1,4 @@
-import React, { CSSProperties, ReactNode, RefObject, useRef } from "react";
+import React, { CSSProperties, RefObject, useRef, useState } from "react";
 
 // @react-aria https://react-spectrum.adobe.com/react-aria/
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -22,6 +22,9 @@ import { ValenceBarSliderBase } from "@types-valence/slider";
 // @valence-styles
 import styles from "@valence-styles/components/potentiometer/vars.module.scss";
 
+// motion stuff
+import { motion, useSpring } from "framer-motion";
+
 export interface SliderBaseChildArguments {
   inputRef: RefObject<HTMLInputElement>;
   trackRef: RefObject<HTMLElement>;
@@ -35,155 +38,117 @@ export interface SliderBaseProps<T = number[]> extends ValenceBarSliderBase<T> {
 }
 
 function SliderBase(props: SliderBaseProps, ref: FocusableRef<HTMLDivElement>) {
-  props = useProviderProps(props);
-  let {
-    isDisabled,
-    children,
-    classes,
-    style,
-    labelPosition = "top",
-    getValueLabel,
-    showValueLabel = !!props.label,
-    formatOptions,
-    minValue = 0,
-    maxValue = 100,
-    ...otherProps
-  } = props;
+  const [targetPosition, setTargetPosition] = useState({ x: 0, y: 100 });
+  const [isPressed, setPressed] = useState(false);
 
-  let { styleProps } = useStyleProps(otherProps);
+  // REFS
+  const pointerSurface = useRef(null);
 
-  // `Math.abs(Math.sign(a) - Math.sign(b)) === 2` is true if the values have a different sign.
-  let alwaysDisplaySign =
-    Math.abs(Math.sign(minValue) - Math.sign(maxValue)) === 2;
-  if (alwaysDisplaySign) {
-    if (formatOptions != null) {
-      if (!("signDisplay" in formatOptions)) {
-        formatOptions = {
-          ...formatOptions,
-          // @ts-ignore
-          signDisplay: "exceptZero",
-        };
-      }
-    } else {
-      // @ts-ignore
-      formatOptions = { signDisplay: "exceptZero" };
+  const calcRelativePosition = (ev) => {
+    var pt = pointerSurface.current.createSVGPoint();
+    pt.x = ev.pageX;
+    pt.y = ev.pageY;
+    pt = pt.matrixTransform(pointerSurface.current.getScreenCTM().inverse());
+
+    return { x: pt.x, y: pt.y };
+  };
+
+  function handlePointerMove(ev) {
+    const pointerPosition = calcRelativePosition(ev);
+    if (isPressed) {
+      setTargetPosition(pointerPosition);
     }
   }
 
-  const formatter = useNumberFormatter(formatOptions);
-  const state = useSliderState({
-    ...props,
-    numberFormatter: formatter,
-    minValue,
-    maxValue,
-  });
-  let trackRef = useRef();
-  let { groupProps, trackProps, labelProps, outputProps } = useSlider(
-    props,
-    state,
-    trackRef
-  );
-
-  let inputRef = useRef();
-  let domRef = useFocusableRef(ref, inputRef);
-
-  let displayValue = "";
-  let maxLabelLength = undefined;
-
-  if (typeof getValueLabel === "function") {
-    displayValue = getValueLabel(state.values);
-    switch (state.values.length) {
-      case 1:
-        maxLabelLength = Math.max(
-          getValueLabel([minValue]).length,
-          getValueLabel([maxValue]).length
-        );
-        break;
-      case 2:
-        // Try all possible combinations of min and max values.
-        maxLabelLength = Math.max(
-          getValueLabel([minValue, minValue]).length,
-          getValueLabel([minValue, maxValue]).length,
-          getValueLabel([maxValue, minValue]).length,
-          getValueLabel([maxValue, maxValue]).length
-        );
-        break;
-      default:
-        throw new Error("Only sliders with 1 or 2 handles are supported!");
-    }
-  } else {
-    maxLabelLength = Math.max(
-      [...formatter.format(minValue)].length,
-      [...formatter.format(maxValue)].length
-    );
-    switch (state.values.length) {
-      case 1:
-        displayValue = state.getThumbValueLabel(0);
-        break;
-      case 2:
-        // This should really use the NumberFormat#formatRange proposal...
-        // https://github.com/tc39/ecma402/issues/393
-        // https://github.com/tc39/proposal-intl-numberformat-v3#formatrange-ecma-402-393
-        displayValue = `${state.getThumbValueLabel(
-          0
-        )} – ${state.getThumbValueLabel(1)}`;
-        maxLabelLength =
-          3 +
-          2 *
-            Math.max(
-              maxLabelLength,
-              [...formatter.format(minValue)].length,
-              [...formatter.format(maxValue)].length
-            );
-        break;
-      default:
-        throw new Error("Only sliders with 1 or 2 handles are supported!");
-    }
+  function handlePress(ev) {
+    setPressed(true);
   }
 
-  let labelNode = (
-    <label {...{ className: styles["Slider-label"], ...labelProps }}>
-      {props.label}
-    </label>
-  );
-
-  let valueNode = (
-    <output
-      {...{
-        ...outputProps,
-        className: styles["Slider-value"],
-        style: maxLabelLength && {
-          width: `${maxLabelLength}ch`,
-          minWidth: `${maxLabelLength}ch`,
-        },
-      }}
-    >
-      {displayValue}
-    </output>
-  );
+  function handleRelease(ev) {
+    setPressed(false);
+  }
 
   return (
     <div
       style={{
-        width: "150px",
+        width: "105px",
         height: "450px",
         background: "#efefef",
         padding: "0.5rem",
         borderRadius: "10px",
       }}
     >
-      <svg viewBox="0 0 50 150">
-        <g className={styles.potentiometer_text}>
-          <rect x={0} y={25} height={125} width={50} fill={"#dfdfdf"} rx={2} />
-          <text fill="deeppink" x={4} y={35} fontSize={"0.5rem"}>
-            250℃
-          </text>
-        </g>
-        <g className={styles.potentiometer_text}>
-          <rect x={0} y={50} height={100} width={50} fill={"deeppink"} rx={2} />
-          <text fill="#efefef" x={4} y={60} fontSize={"0.5rem"}>
-            250℃
-          </text>
+      <svg
+        viewBox="0 0 35 150"
+        style={{ userSelect: "none" }}
+        ref={pointerSurface}
+        onMouseMove={(ev) => handlePointerMove(ev)}
+        onMouseDown={(ev) => handlePress(ev)}
+        onMouseUp={(ev) => handleRelease(ev)}
+      >
+        <defs>
+          <clipPath id="potentiometer_overflow">
+            <rect x="0" rx="2" y="0" width={35} height={150} />
+            <linearGradient
+              id="gradientNormal"
+              x1="0"
+              y1="0"
+              x2="800"
+              y2="0"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop offset="0" stop-color="#ff5c85"></stop>
+              <stop offset="0.14285714285714285" stop-color="#ff5881"></stop>
+              <stop offset="0.2857142857142857" stop-color="#ff547d"></stop>
+              <stop offset="0.42857142857142855" stop-color="#ff4f79"></stop>
+              <stop offset="0.5714285714285714" stop-color="#ff4b74"></stop>
+              <stop offset="0.7142857142857142" stop-color="#ff4770"></stop>
+              <stop offset="0.8571428571428571" stop-color="#ff426b"></stop>
+              <stop offset="1" stop-color="#ff3d67"></stop>
+            </linearGradient>
+          </clipPath>
+        </defs>
+        <g clipPath="url(#potentiometer_overflow)">
+          <g className={styles.potentiometer_text}>
+            <rect
+              x={0}
+              y={25}
+              height={150}
+              width={35}
+              fill={"#dfdfdf"}
+              rx={2}
+            />
+            <text
+              fill={"url(#gradientNormal)"}
+              x={4}
+              y={35}
+              fontSize={"0.40rem"}
+            >
+              250℃
+            </text>
+          </g>
+          <motion.g
+            className={styles.potentiometer_text}
+            initial={{
+              y: targetPosition.y,
+            }}
+            animate={{
+              y: targetPosition.y,
+            }}
+            transition={{ type: "spring", mass: 0.05, stiffness: 100 }}
+          >
+            <rect
+              x={0}
+              y={0}
+              height={150}
+              width={35}
+              fill={"url(#gradientNormal)"}
+              rx={2}
+            />
+            <text fill="#efefef" x={4} y={10} fontSize={"0.40rem"}>
+              250℃
+            </text>
+          </motion.g>
         </g>
       </svg>
     </div>
