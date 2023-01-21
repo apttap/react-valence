@@ -40,8 +40,8 @@
     "@react-stately/slider": "^3.2.1",
     "@react-valence/instrument": "^0.0.1",
     "@react-valence/utils": "^0.0.1",
-    "@types-valence/shared": "^0.0.1",
-    "@types-valence/slider": "^0.0.1"
+    "@types-valence/potentiometer": "^0.0.1",
+    "@types-valence/shared": "^0.0.1"
   },
   "devDependencies": {
     "@valence-styles/components": "^0.0.1"

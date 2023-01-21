@@ -8,10 +8,7 @@ import { useSlider } from "@react-aria/slider";
 import { clamp, snapValueToStep, toFixedNumber } from "@react-stately/utils";
 
 // @react-valence https://valence.austinpittman.net
-import {
-  classNames,
-  svgPointerPosition,
-} from "@react-valence/utils";
+import { classNames, svgPointerPosition } from "@react-valence/utils";
 import {
   SVGBackgroundGradientFrost,
   SVGBackgroundGradientNormal,
@@ -20,38 +17,66 @@ import { useProviderProps } from "@react-valence/provider";
 
 // @types-valence
 import { FocusableRef } from "@types-valence/shared";
-import { ValenceBarSliderBase } from "@types-valence/slider";
+import { ValencePotentiometerBase } from "@types-valence/potentiometer";
 
 // @valence-styles
 import styles from "@valence-styles/components/potentiometer/vars.module.scss";
 
 // Motion
 import { motion } from "framer-motion";
+import { Value } from "@react-valence/color/stories/ColorField.stories";
 
 export interface SliderBaseChildArguments {
   inputRef: RefObject<HTMLInputElement>;
 }
 
-export interface SliderBaseProps<T = number[]> extends ValenceBarSliderBase<T> {
-
-}
+export interface PotentiometerBaseProps<T = number[]>
+  extends ValencePotentiometerBase<T> {}
 
 function PotentiometerBase(
-  props: SliderBaseProps,
+  props: PotentiometerBaseProps,
   ref: FocusableRef<HTMLDivElement>
 ) {
+  const [maxValue, setMaxValue] = useState(350);
+  const [minValue, setMinValue] = useState(0);
+  const [size, setSize] = useState({ width: 35, height: 150 });
   const [targetPosition, setTargetPosition] = useState({ x: 0, y: 100 });
+  const [targetValue, setTargetValue] = useState(0);
+  const [currentValue, setCurrentValue] = useState(0);
   const [isPressed, setPressed] = useState(false);
+
+  let limits = {
+    minHeight: 15,
+    maxHeight: 150,
+  };
 
   // REFS
   const pointerSurface = useRef(null);
 
+  // calc position to value
+  const calcValueFromPosition = (position: number) => {
+    let value = 0;
+    let fullRange = limits.maxHeight - limits.minHeight;
+    value = maxValue - maxValue * (targetPosition.y / fullRange);
+    return value;
+  };
+
+  let formatter = useNumberFormatter({ style: "unit", unitDisplay: "short", unit: "celsius" });
+
   function handlePointerMove(ev) {
+    const maxMovement = limits.maxHeight - limits.minHeight;
     const pointerPosition = svgPointerPosition(ev, pointerSurface);
+    const step = 1 * (maxMovement / maxValue);
     if (isPressed) {
-      const snappedY = snapValueToStep(pointerPosition.y, 0, 135, 5);
-      console.log(snappedY, pointerPosition.y);
-      setTargetPosition({x: pointerPosition.x, y: snappedY});
+      const snappedY = snapValueToStep(pointerPosition.y, 0, maxMovement, step);
+      setTargetPosition({ x: pointerPosition.x, y: snappedY });
+      let value = toFixedNumber(
+        calcValueFromPosition(targetPosition.y),
+        5,
+        10
+      );
+
+      setTargetValue(formatter.format(value));
     }
   }
 
@@ -85,6 +110,7 @@ function PotentiometerBase(
           <clipPath id="potentiometer_overflow">
             <rect x="0" rx="2" y="0" width={35} height={150} />
             <SVGBackgroundGradientNormal />
+            <SVGBackgroundGradientFrost />
           </clipPath>
         </defs>
         <g clipPath="url(#potentiometer_overflow)">
@@ -92,8 +118,8 @@ function PotentiometerBase(
             <rect
               x={0}
               y={25}
-              height={150}
-              width={35}
+              height={size.height}
+              width={size.width}
               fill={"#dfdfdf"}
               rx={2}
             />
@@ -119,13 +145,13 @@ function PotentiometerBase(
             <rect
               x={0}
               y={0}
-              height={150}
-              width={35}
+              height={size.height}
+              width={size.width}
               fill={"url(#gradientNormal)"}
               rx={2}
             />
             <text fill="#efefef" x={4} y={10} fontSize={"0.40rem"}>
-              250℃
+              {targetValue}
             </text>
           </motion.g>
         </g>
