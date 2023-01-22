@@ -18,10 +18,19 @@ import {
   PotentiometerBase,
 } from "./PotentiometerBase";
 
-function Potentiometer(props: ValenceSliderProps, ref: FocusableRef<HTMLDivElement>) {
+export interface ValencePotentiometerBaseProps {
+  width: number;
+  height: number;
+  min: number;
+  max: number;
+  currentValue?: number;
+  targetValue?: number;
+}
+
+function Potentiometer(props: ValencePotentiometerBaseProps, ref: FocusableRef<HTMLDivElement>) {
 
   return (
-    <PotentiometerBase/>
+    <PotentiometerBase {...props}/>
   );
 }
 

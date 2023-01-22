@@ -31,33 +31,53 @@ import styles from "@valence-styles/components/potentiometer/vars.module.scss";
 // Motion
 import { motion } from "framer-motion";
 
+// Local
+import { PointerFlag } from "./PointerFlag";
+import { usePotentiometer } from "./usePotentiometer";
+
 export interface SliderBaseChildArguments {
   inputRef: RefObject<HTMLInputElement>;
 }
 
-export interface PotentiometerBaseProps<T = number[]>
-  extends ValencePotentiometerBase<T> {}
+export interface ValencePotentiometerBaseProps {
+  width: number;
+  height: number;
+  min: number;
+  max: number;
+  currentValue?: number;
+  targetValue?: number;
+}
 
 function PotentiometerBase(
-  props: PotentiometerBaseProps,
+  props: ValencePotentiometerBaseProps,
   ref: FocusableRef<HTMLDivElement>
 ) {
-  let limits = {
-    minHeight: 15,
-    maxHeight: 150,
-  };
-
-  const [maxValue, setMaxValue] = useState(350);
-  const [minValue, setMinValue] = useState(0);
-  const [size, setSize] = useState({ width: 35, height: 150 });
-  const [targetPosition, setTargetPosition] = useState({
-    x: 0,
-    y: limits.maxHeight - limits.minHeight,
-  });
-  const [targetValue, setTargetValue] = useState("0");
-  const [currentValue, setCurrentValue] = useState("21");
-  const [currentPostion, setCurrentPosition] = useState(115)
-  const [isPressed, setPressed] = useState(false);
+  const {
+    currentPosition,
+    currentValue,
+    height,
+    isHovered,
+    isPressed,
+    maxHeight,
+    maxValue,
+    minHeight,
+    minValue,
+    pointerPosition,
+    pointerValue,
+    setCurrentPosition,
+    setCurrentValue,
+    setHovered,
+    setPointerPosition,
+    setPointerValue,
+    setPressed,
+    setTargetBuffer,
+    setTargetPosition,
+    setTargetValue,
+    targetBuffer,
+    targetPosition,
+    targetValue,
+    width,
+  } = usePotentiometer(props);
 
   // REFS
   const pointerSurface = useRef(null);
@@ -65,8 +85,8 @@ function PotentiometerBase(
   // calc position to value
   const calcValueFromPosition = (position: number) => {
     let value = 0;
-    let fullRange = limits.maxHeight - limits.minHeight;
-    value = maxValue - maxValue * (targetPosition.y / fullRange);
+    let fullRange = maxHeight - minHeight;
+    value = maxValue - maxValue * (position / fullRange);
     return value;
   };
 
@@ -77,15 +97,26 @@ function PotentiometerBase(
   });
 
   function handlePointerMove(ev) {
-    const maxMovement = limits.maxHeight - limits.minHeight;
-    const pointerPosition = svgPointerPosition(ev, pointerSurface);
+    const maxMovement = maxHeight - minHeight;
+    const position = svgPointerPosition(ev, pointerSurface);
+
     const step = 1 * (maxMovement / maxValue);
+
+    const snappedY = snapValueToStep(position.y, 0, maxMovement, step);
+    setPointerPosition({ x: position.x, y: snappedY });
+    let pointerValueBuffer = toFixedNumber(
+      calcValueFromPosition(snappedY),
+      0,
+      10
+    );
+    setPointerValue(formatter.format(pointerValueBuffer));
+
     if (isPressed) {
-      const snappedY = snapValueToStep(pointerPosition.y, 0, maxMovement, step);
-      setTargetPosition({ x: pointerPosition.x, y: snappedY });
-      let value = toFixedNumber(calcValueFromPosition(targetPosition.y), 5, 10);
+      setTargetPosition({ x: position.x, y: snappedY });
+      let value = toFixedNumber(calcValueFromPosition(targetPosition.y), 0, 10);
 
       setTargetValue(formatter.format(value));
+    } else {
     }
   }
 
@@ -99,6 +130,14 @@ function PotentiometerBase(
 
   function handleRelease(ev) {
     setPressed(false);
+  }
+
+  function handleMouseEnter(ev) {
+    setHovered(true);
+  }
+
+  function handleMouseLeave(ev) {
+    setHovered(false);
   }
 
   return (
@@ -115,13 +154,19 @@ function PotentiometerBase(
         viewBox="0 0 35 150"
         style={{ userSelect: "none" }}
         ref={pointerSurface}
+        onMouseEnter={(ev) => {
+          handleMouseEnter(ev);
+        }}
+        onMouseLeave={(ev) => {
+          handleMouseLeave(ev);
+        }}
         onMouseMove={(ev) => handlePointerMove(ev)}
         onMouseDown={(ev) => handlePress(ev)}
         onMouseUp={(ev) => handleRelease(ev)}
       >
         <defs>
           <clipPath id="potentiometer_overflow">
-            <rect x="0" rx="2" y="0" width={35} height={150} />
+            <rect x="0" rx="2" y="-10" width={35} height={160} />
             <SVGBackgroundGradientNormal />
             <SVGBackgroundGradientFrost />
           </clipPath>
@@ -130,16 +175,16 @@ function PotentiometerBase(
           <g className={styles.potentiometer_text}>
             <rect
               x={0}
-              y={currentPostion}
-              height={size.height}
-              width={size.width}
-              fill={"#dfdfdf"}
+              y={currentPosition}
+              height={height}
+              width={width}
+              fill={"url(#gradientNormal)"}
               rx={2}
             />
             <text
-              fill={"url(#gradientNormal)"}
+              fill={"#dfdfdf"}
               x={4}
-              y={currentPostion + 10}
+              y={currentPosition + 10}
               fontSize={"0.40rem"}
             >
               {currentValue}
@@ -158,34 +203,48 @@ function PotentiometerBase(
             <rect
               x={0}
               y={0}
-              height={size.height}
-              width={size.width}
-              fill={"url(#gradientNormal)"}
+              height={height}
+              width={width}
+              fill={"#dfdfdf"}
               rx={2}
             />
-            <text fill="#efefef" x={4} y={10} fontSize={"0.40rem"}>
+            <motion.text
+              fill="url(#gradientNormal)"
+              x={4}
+              y={10}
+              fontSize={"0.40rem"}
+              initial={{ opacity: 1 }}
+              animate={{ opacity: isHovered ? 0.25 : 1 }}
+            >
               {targetValue}
-            </text>
+            </motion.text>
           </motion.g>
-          {currentPostion > targetPosition.y && (
-            <g className={styles.potentiometer_text}>
+          {currentPosition > targetPosition.y && (
+            <motion.g
+              className={styles.potentiometer_text}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
               <rect
                 x={0}
-                y={currentPostion}
-                height={size.height}
-                width={size.width}
-                fill={"#dfdfdf"}
+                y={currentPosition}
+                height={height}
+                width={width}
+                fill={"url(#gradientNormal)"}
                 rx={2}
               />
               <text
-                fill={"url(#gradientNormal)"}
+                fill={"#dfdfdf"}
                 x={4}
-                y={currentPostion + 10}
+                y={currentPosition + 10}
                 fontSize={"0.40rem"}
               >
                 {currentValue}
               </text>
-            </g>
+            </motion.g>
+          )}
+          {isHovered && (
+            <PointerFlag position={pointerPosition} value={pointerValue} />
           )}
         </g>
       </svg>
